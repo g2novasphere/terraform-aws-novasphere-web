@@ -4,7 +4,7 @@
 
 resource "aws_security_group" "this_alb" {
   name        = "${var.name_prefix}-${var.environment}-alb-sg"
-  description = "Security Group pour l'Application Load Balancer"
+  description = "Security Group pour Application Load Balancer"
   vpc_id      = var.vpc_id
 
   ingress {
@@ -30,7 +30,7 @@ resource "aws_security_group" "this_web" {
   vpc_id      = var.vpc_id
 
   ingress {
-    description     = "Autoriser HTTP depuis l'ALB uniquement"
+    description     = "Autoriser HTTP depuis ALB uniquement"
     from_port       = 80
     to_port         = 80
     protocol        = "tcp"
@@ -55,7 +55,7 @@ resource "aws_security_group" "this_web" {
 # ------------------------------------------------------------------------------
 
 resource "aws_launch_template" "this" {
-  name_prefix   = "${var.name_prefix}-${var.environment}-lt-"
+  name_prefix   = "${var.name_prefix}-lt-"
   image_id      = var.ami_id
   instance_type = var.instance_type
   user_data     = var.user_data
@@ -73,7 +73,7 @@ resource "aws_launch_template" "this" {
 }
 
 resource "aws_autoscaling_group" "this" {
-  name                = "${var.name_prefix}-${var.environment}-asg"
+  name                = "${var.name_prefix}-asg"
   vpc_zone_identifier = var.subnet_ids
   min_size            = var.min_size
   max_size            = var.max_size
@@ -91,7 +91,7 @@ resource "aws_autoscaling_group" "this" {
 # ------------------------------------------------------------------------------
 
 resource "aws_lb" "this" {
-  name                       = "${var.name_prefix}-${var.environment}-alb"
+  name                       = "${var.name_prefix}-alb"
   internal                   = false
   load_balancer_type         = "application"
   security_groups            = [aws_security_group.this_alb.id]
@@ -100,7 +100,7 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "this" {
-  name     = "${var.name_prefix}-${var.environment}-tg"
+  name     = "${var.name_prefix}-tg"
   port     = 80
   protocol = "HTTP"
   vpc_id   = var.vpc_id
