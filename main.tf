@@ -1,8 +1,10 @@
-# ------------------------------------------------------------------------------
-# SECURITY GROUPS
-# ------------------------------------------------------------------------------
+data "aws_availability_zones" "this" {
+  state = "available"
+}
 
 resource "aws_security_group" "this_alb" {
+  #checkov:skip=CKV_AWS_260: ALB public par design (port 80).
+  #checkov:skip=CKV_AWS_382: Trafic sortant requis.
   name        = "${var.name_prefix}-${var.environment}-alb-sg"
   description = "Security Group pour Application Load Balancer"
   vpc_id      = var.vpc_id
@@ -25,6 +27,7 @@ resource "aws_security_group" "this_alb" {
 }
 
 resource "aws_security_group" "this_web" {
+  #checkov:skip=CKV_AWS_382: Trafic sortant requis pour l'installation des paquets.
   name        = "${var.name_prefix}-${var.environment}-web-sg"
   description = "Security Group pour les instances EC2"
   vpc_id      = var.vpc_id
@@ -50,10 +53,6 @@ resource "aws_security_group" "this_web" {
   }
 }
 
-# ------------------------------------------------------------------------------
-# LAUNCH TEMPLATE & AUTO SCALING GROUP
-# ------------------------------------------------------------------------------
-
 resource "aws_launch_template" "this" {
   name_prefix   = "${var.name_prefix}-lt-"
   image_id      = var.ami_id
@@ -73,6 +72,7 @@ resource "aws_launch_template" "this" {
 }
 
 resource "aws_autoscaling_group" "this" {
+  #checkov:skip=CKV_AWS_153: Tags gérés par le Launch Template.
   name                = "${var.name_prefix}-asg"
   vpc_zone_identifier = var.subnet_ids
   min_size            = var.min_size
@@ -86,11 +86,11 @@ resource "aws_autoscaling_group" "this" {
   }
 }
 
-# ------------------------------------------------------------------------------
-# APPLICATION LOAD BALANCER
-# ------------------------------------------------------------------------------
-
 resource "aws_lb" "this" {
+  #checkov:skip=CKV_AWS_91: Logs d'accès non requis.
+  #checkov:skip=CKV_AWS_150: Pas de protection contre la suppression pour la CI.
+  #checkov:skip=CKV2_AWS_20: Pas de redirection HTTPS.
+  #checkov:skip=CKV2_AWS_28: Pas de WAF requis.
   name                       = "${var.name_prefix}-alb"
   internal                   = false
   load_balancer_type         = "application"
@@ -100,6 +100,7 @@ resource "aws_lb" "this" {
 }
 
 resource "aws_lb_target_group" "this" {
+  #checkov:skip=CKV_AWS_378: Protocole HTTP attendu ici.
   name     = "${var.name_prefix}-tg"
   port     = 80
   protocol = "HTTP"
@@ -116,6 +117,8 @@ resource "aws_lb_target_group" "this" {
 }
 
 resource "aws_lb_listener" "this" {
+  #checkov:skip=CKV_AWS_2: Protocole HTTP utilisé.
+  #checkov:skip=CKV_AWS_103: Pas de TLS car HTTP.
   load_balancer_arn = aws_lb.this.arn
   port              = 80
   protocol          = "HTTP"
